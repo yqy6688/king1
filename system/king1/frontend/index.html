@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>旅行社管理系统</title>
+    <!-- Element Plus CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.7.5/dist/index.css">
+    <!-- Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.4.29/dist/vue.global.js"></script>
+    <!-- Vue Router -->
+    <script src="https://cdn.jsdelivr.net/npm/vue-router@4.3.3/dist/vue-router.global.js"></script>
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.7.2/dist/axios.min.js"></script>
+    <!-- Element Plus -->
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.7.5/dist/index.full.js"></script>
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- Pinia -->
+    <script src="https://cdn.jsdelivr.net/npm/pinia@2.1.7/dist/pinia.iife.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      // 使用CDN加载的全局变量
+      const { createApp, ref, computed, onMounted } = Vue
+      const { createRouter, createWebHistory } = VueRouter
+      const { ElMessage, ElMessageBox, ElLoading } = ElementPlus
+
+      // 路由配置
+      const router = createRouter({
+        history: createWebHistory(),
+        routes: [
+          {
+            path: '/',
+            redirect: '/login'
+          },
+          {
+            path: '/login',
+            name: 'Login',
+            component: {
+              template: `
+                <div class="login-container">
+                  <el-card class="login-card">
+                    <template #header>
+                      <div class="login-header">
+                        <h2>旅行社管理系统</h2>
+                        <p>请登录</p>
+                      </div>
+                    </template>
+                    <el-form ref="loginForm" :model="loginForm" :rules="rules" label-width="80px">
+                      <el-form-item label="用户名" prop="username">
+                        <el-input v-model="loginForm.username" placeholder="请输入用户名"></el-input>
+                      </el-form-item>
+                      <el-form-item label="密码" prop="password">
+                        <input type="password" v-model="loginForm.password" placeholder="请输入密码" style="width: 100%; padding: 10px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px;">
+                      </el-form-item>
+                      <el-form-item>
+                        <el-button type="primary" @click="login" style="width: 100%">登录</el-button>
+                      </el-form-item>
+                    </el-form>
+                  </el-card>
+                </div>
+              `,
+              setup() {
+                const loginForm = ref({
+                  username: 'admin',
+                  password: '123456'
+                })
+                const rules = ref({
+                  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+                  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+                })
+                const login = () => {
+                  // 模拟登录
+                  localStorage.setItem('token', 'mock-token')
+                  ElMessage.success('登录成功')
+                  // 跳转到首页
+                  window.location.href = '/#/home'
+                }
+                return {
+                  loginForm,
+                  rules,
+                  login
+                }
+              }
+            }
+          },
+          {
+            path: '/home',
+            name: 'Home',
+            component: {
+              template: `
+                <div class="home-container">
+                  <el-container style="height: 100vh">
+                    <el-aside width="200px" style="background-color: #303133">
+                      <div class="logo">旅行社管理系统</div>
+                      <el-menu
+                        :default-active="activeMenu"
+                        class="el-menu-vertical-demo"
+                        background-color="#303133"
+                        text-color="#fff"
+                        active-text-color="#409EFF"
+                      >
+                        <el-menu-item index="user">
+                          <template #title>
+                            <span>用户管理</span>
+                          </template>
+                        </el-menu-item>
+                        <el-menu-item index="customer">
+                          <template #title>
+                            <span>客户管理</span>
+                          </template>
+                        </el-menu-item>
+                        <el-menu-item index="dashboard">
+                          <template #title>
+                            <span>数据大屏</span>
+                          </template>
+                        </el-menu-item>
+                      </el-menu>
+                    </el-aside>
+                    <el-container>
+                      <el-header style="background-color: #fff; border-bottom: 1px solid #eaeaea">
+                        <div class="header-right">
+                          <el-button type="text" @click="logout">退出登录</el-button>
+                        </div>
+                      </el-header>
+                      <el-main>
+                        <router-view></router-view>
+                      </el-main>
+                    </el-container>
+                  </el-container>
+                </div>
+              `,
+              setup() {
+                const activeMenu = ref('user')
+                const logout = () => {
+                  localStorage.removeItem('token')
+                  window.location.href = '/#/login'
+                }
+                return {
+                  activeMenu,
+                  logout
+                }
+              }
+            },
+            children: [
+              {
+                path: 'user',
+                name: 'User',
+                component: {
+                  template: `
+                    <div class="user-container">
+                      <el-card>
+                        <template #header>
+                          <div class="card-header">
+                            <h3>用户管理</h3>
+                          </div>
+                        </template>
+                        <el-table :data="users" style="width: 100%">
+                          <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                          <el-table-column prop="username" label="用户名"></el-table-column>
+                          <el-table-column prop="name" label="姓名"></el-table-column>
+                          <el-table-column prop="role" label="角色"></el-table-column>
+                          <el-table-column label="操作" width="150">
+                            <template #default="scope">
+                              <el-button size="small" type="primary">编辑</el-button>
+                              <el-button size="small" type="danger">删除</el-button>
+                            </template>
+                          </el-table-column>
+                        </el-table>
+                      </el-card>
+                    </div>
+                  `,
+                  setup() {
+                    const users = ref([
+                      { id: 1, username: 'admin', name: '管理员', role: '管理员' },
+                      { id: 2, username: 'operator', name: '计调', role: '计调' },
+                      { id: 3, username: 'sales', name: '销售', role: '销售' },
+                      { id: 4, username: 'finance', name: '财务', role: '财务' },
+                      { id: 5, username: 'guide', name: '导游', role: '导游' }
+                    ])
+                    return {
+                      users
+                    }
+                  }
+                }
+              },
+              {
+                path: 'customer',
+                name: 'Customer',
+                component: {
+                  template: `
+                    <div class="customer-container">
+                      <el-card>
+                        <template #header>
+                          <div class="card-header">
+                            <h3>客户管理</h3>
+                          </div>
+                        </template>
+                        <el-table :data="customers" style="width: 100%">
+                          <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                          <el-table-column prop="name" label="姓名"></el-table-column>
+                          <el-table-column prop="phone" label="电话"></el-table-column>
+                          <el-table-column prop="level" label="客户等级"></el-table-column>
+                          <el-table-column prop="consumption" label="消费金额"></el-table-column>
+                          <el-table-column label="操作" width="150">
+                            <template #default="scope">
+                              <el-button size="small" type="primary">编辑</el-button>
+                              <el-button size="small" type="danger">删除</el-button>
+                            </template>
+                          </el-table-column>
+                        </el-table>
+                      </el-card>
+                    </div>
+                  `,
+                  setup() {
+                    const customers = ref([
+                      { id: 1, name: '张三', phone: '13800138000', level: 'VIP', consumption: 10000 },
+                      { id: 2, name: '李四', phone: '13900139000', level: '普通', consumption: 5000 },
+                      { id: 3, name: '王五', phone: '13700137000', level: 'VIP', consumption: 15000 },
+                      { id: 4, name: '赵六', phone: '13600136000', level: '普通', consumption: 3000 },
+                      { id: 5, name: '钱七', phone: '13500135000', level: 'VIP', consumption: 20000 }
+                    ])
+                    return {
+                      customers
+                    }
+                  }
+                }
+              },
+              {
+                path: 'dashboard',
+                name: 'Dashboard',
+                component: {
+                  template: `
+                    <div class="dashboard-container">
+                      <el-row :gutter="20">
+                        <el-col :span="8">
+                          <el-card shadow="hover">
+                            <template #header>
+                              <div class="card-header">
+                                <h3>总客户数</h3>
+                              </div>
+                            </template>
+                            <div class="statistic-value">1,234</div>
+                          </el-card>
+                        </el-col>
+                        <el-col :span="8">
+                          <el-card shadow="hover">
+                            <template #header>
+                              <div class="card-header">
+                                <h3>总订单数</h3>
+                              </div>
+                            </template>
+                            <div class="statistic-value">567</div>
+                          </el-card>
+                        </el-col>
+                        <el-col :span="8">
+                          <el-card shadow="hover">
+                            <template #header>
+                              <div class="card-header">
+                                <h3>总销售额</h3>
+                              </div>
+                            </template>
+                            <div class="statistic-value">¥1,234,567</div>
+                          </el-card>
+                        </el-col>
+                      </el-row>
+                      <el-row :gutter="20" style="margin-top: 20px">
+                        <el-col :span="12">
+                          <el-card shadow="hover">
+                            <template #header>
+                              <div class="card-header">
+                                <h3>销售趋势</h3>
+                              </div>
+                            </template>
+                            <div id="salesChart" style="width: 100%; height: 400px"></div>
+                          </el-card>
+                        </el-col>
+                        <el-col :span="12">
+                          <el-card shadow="hover">
+                            <template #header>
+                              <div class="card-header">
+                                <h3>客户分布</h3>
+                              </div>
+                            </template>
+                            <div id="customerChart" style="width: 100%; height: 400px"></div>
+                          </el-card>
+                        </el-col>
+                      </el-row>
+                    </div>
+                  `,
+                  setup() {
+                    onMounted(() => {
+                      // 初始化销售趋势图表
+                      const salesChart = echarts.init(document.getElementById('salesChart'))
+                      const salesOption = {
+                        xAxis: {
+                          type: 'category',
+                          data: ['1月', '2月', '3月', '4月', '5月', '6月']
+                        },
+                        yAxis: {
+                          type: 'value'
+                        },
+                        series: [{
+                          data: [120, 190, 300, 500, 800, 1200],
+                          type: 'line'
+                        }]
+                      }
+                      salesChart.setOption(salesOption)
+
+                      // 初始化客户分布图
+                      const customerChart = echarts.init(document.getElementById('customerChart'))
+                      const customerOption = {
+                        series: [{
+                          type: 'pie',
+                          data: [
+                            { value: 300, name: 'VIP客户' },
+                            { value: 600, name: '普通客户' },
+                            { value: 334, name: '潜在客户' }
+                          ]
+                        }]
+                      }
+                      customerChart.setOption(customerOption)
+                    })
+                    return {}
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      })
+
+      // 创建应用
+      const app = createApp({
+        template: `<router-view />`
+      })
+
+      // 使用路由
+      app.use(router)
+      app.use(ElementPlus)
+
+      // 挂载应用
+      app.mount('#app')
+    </script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+        background-color: #f5f7fa;
+      }
+
+      /* 登录页面样式 */
+      .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f5f7fa;
+      }
+
+      .login-card {
+        width: 400px;
+        box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+      }
+
+      .login-header {
+        text-align: center;
+      }
+
+      .login-header h2 {
+        margin-bottom: 10px;
+        color: #303133;
+      }
+
+      .login-header p {
+        color: #909399;
+      }
+
+      /* 首页样式 */
+      .home-container {
+        height: 100vh;
+      }
+
+      .logo {
+        height: 60px;
+        line-height: 60px;
+        text-align: center;
+        color: #fff;
+        font-size: 18px;
+        font-weight: bold;
+      }
+
+      .header-right {
+        float: right;
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .statistic-value {
+        font-size: 36px;
+        font-weight: bold;
+        color: #409EFF;
+        text-align: center;
+        margin-top: 20px;
+      }
+    </style>
+  </body>
+</html>
