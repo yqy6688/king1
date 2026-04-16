@@ -1,10 +1,8 @@
-// 使用CDN加载的全局变量
-const { createApp } = Vue
-const { createRouter, createWebHistory } = VueRouter
-
-// 导入组件
+import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css' // 必须引入样式
 
 const app = createApp(App)
 app.use(router)

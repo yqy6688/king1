@@ -4,8 +4,10 @@
       <template #header>
         <div class="card-header">
           <span>用户管理</span>
+          <el-button type="primary" @click="handleAdd">新增用户</el-button>
         </div>
       </template>
+      
       <el-table :data="userList" v-loading="tableLoading" border stripe style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="username" label="用户名" />
@@ -26,16 +28,53 @@
         </el-table-column>
       </el-table>
     </el-card>
+
+    <el-dialog v-model="dialogVisible" title="新增用户" width="500px">
+      <el-form :model="form" label-width="80px">
+        <el-form-item label="用户名">
+          <el-input v-model="form.username" placeholder="请输入登录账号" />
+        </el-form-item>
+        <el-form-item label="密码">
+          <el-input v-model="form.password" placeholder="不填则默认为 123456" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="真实姓名">
+          <el-input v-model="form.name" placeholder="请输入员工姓名" />
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="form.phone" placeholder="请输入手机号" />
+        </el-form-item>
+        <el-form-item label="部门">
+          <el-input v-model="form.department" placeholder="请输入所在部门" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogVisible = false">取 消</el-button>
+          <el-button type="primary" @click="saveUser">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 
 const userList = ref([])
 const tableLoading = ref(false)
+
+// 控制弹窗显示隐藏的变量
+const dialogVisible = ref(false)
+// 表单数据绑定
+const form = reactive({
+  username: '',
+  password: '',
+  name: '',
+  phone: '',
+  department: ''
+})
 
 const loadUsers = async () => {
   tableLoading.value = true
@@ -46,6 +85,30 @@ const loadUsers = async () => {
     console.error(error)
   } finally {
     tableLoading.value = false
+  }
+}
+
+// 点击新增按钮触发
+const handleAdd = () => {
+  // 清空上一次填写的表单内容
+  Object.assign(form, { username: '', password: '', name: '', phone: '', department: '' })
+  dialogVisible.value = true
+}
+
+// 提交保存用户
+const saveUser = async () => {
+  if (!form.username) {
+    ElMessage.warning('用户名不能为空')
+    return
+  }
+  try {
+    // 调用刚才我们在后端写的那个 POST 接口
+    await request.post('/sys/user', form)
+    ElMessage.success('新增用户成功！')
+    dialogVisible.value = false
+    loadUsers() // 重新刷新列表
+  } catch (error) {
+    console.error(error)
   }
 }
 
